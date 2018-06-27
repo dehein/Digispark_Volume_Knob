@@ -1,32 +1,32 @@
-#include <Arduino.h>
+// a little sketch for adjusting a computer's volume level using a clicky knob
+// by @Bluebie on GitHub - MIT License
 #include "DigiKeyboard.h"
+#define KEY_MUTE 127
+#define KEY_VOLUME_UP 128
+#define KEY_VOLUME_DOWN 129
 
-const uint8_t KEY_MUTE = 127;
-const uint8_t KEY_VOLUME_UP = 128;
-const uint8_t KEY_VOLUME_DOWN = 129;
-
-const uint8_t KNOB_QUAD_LEFT = 1u;
-const uint8_t KNOB_QUAD_RIGHT = 2u;  
-const uint8_t BUTTON_PIN = 5u;
-
-const uint16_t DEBOUNCE_DURATION_US = 1500u; /* 0.5 milliseconds */
-
+#define BUTTON_PIN 5
+#define KNOB_QUAD_LEFT 1
+#define KNOB_QUAD_RIGHT 2
 
 void setup() {
-    
-    pinMode(KNOB_QUAD_LEFT, INPUT);
-    pinMode(KNOB_QUAD_RIGHT, INPUT);
-    pinMode(BUTTON_PIN, INPUT);
-
-    digitalWrite(KNOB_QUAD_LEFT, HIGH);
-    digitalWrite(KNOB_QUAD_RIGHT, HIGH);
-    digitalWrite(BUTTON_PIN, HIGH);
-    DigiKeyboard.delay(100);
+  // set encoder and button pins to be inputs
+  pinMode(BUTTON_PIN, INPUT);
+  pinMode(KNOB_QUAD_LEFT, INPUT);
+  pinMode(KNOB_QUAD_RIGHT, INPUT);
+  
+  // turn on pullup resistors
+  digitalWrite(BUTTON_PIN, HIGH);
+  digitalWrite(KNOB_QUAD_LEFT, HIGH);
+  digitalWrite(KNOB_QUAD_RIGHT, HIGH);
+  
+  DigiKeyboard.delay(100);
 }
 
 // debounce a pin, used for mute button
 // increase DEBOUNCE_DURATION_US if sometimes pressing mute button
 // does the action too many times.
+#define DEBOUNCE_DURATION_US 1500 /* 0.5 milliseconds */
 void debounce(byte pin, boolean state) {
   unsigned long time_now = micros();
   unsigned long time_since_wrong = time_now;
@@ -41,14 +41,17 @@ void debounce(byte pin, boolean state) {
   }
 }
 
-
 void loop() {
-
-    alter_volume(read_knob());
-
+  DigiKeyboard.update();
+  // check if button is pressed
+  if (digitalRead(BUTTON_PIN) == LOW) {
+    button_pressed();
+    debounce(BUTTON_PIN, LOW); // wait till button has settled as being low
+    debounce(BUTTON_PIN, HIGH); // wait till button has settled on being high
+  }
+  
+  alter_volume(read_knob());
 }
-
-
 
 void alter_volume(int amount) {
   while (amount) {
@@ -62,11 +65,19 @@ void alter_volume(int amount) {
   }
 }
 
+void button_pressed() {
+  DigiKeyboard.sendKeyStroke(0); //this is generally not necessary but with some older systems it seems to prevent missing the first character after a delay
+  DigiKeyboard.sendKeyStroke(KEY_MUTE);
+}
+
 // returns the bits from the two knob wires as a 2-bit number
 byte knob_bits() {
   return digitalRead(KNOB_QUAD_LEFT) << 1 | digitalRead(KNOB_QUAD_RIGHT);
 }
 
+// reads a simple incremental quad encoder knob, returns -1, 0, or +1 indicating if the knob has rotated
+// to the left or right by one click. Call this function as often as possible so it handles knobs being turned
+// very quickly okay
 char read_knob() {
   static byte previous_state; // these two variables keep their values between function calls
   static byte armed;
