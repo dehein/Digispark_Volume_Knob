@@ -2,8 +2,6 @@ This is a little arduino sketch for digispark - when combined with a little clic
 Check out the media folder for sketches and images.
 And now Picture time:
 
-![fritzing_sketch_digispark_ky_040_Schaltplan.png](/media/fritzing_sketch_digispark_ky_040_Schaltplan.png "Fritzing sketch")
-
 ![wiring.png](/media/wiring.png "Basic Wiring")
 
 ![hardware.jpg](/media/hardware.jpg "Hardware example") 
